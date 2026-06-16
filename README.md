@@ -8,7 +8,7 @@ Dinolog is a log exploration tool for nginx.
 
 Read nginx access logs, parse them, put them into a database and provide a web interface to explore the logs.
 
-<img src="images/mockup.png" width="800" height="400">
+<img src="images/mockup.png" width="800" >
 
 ## Log parsing principle
 
