@@ -1,6 +1,5 @@
 use dinolog_server::{
-    domain::{loader::load_logs_from_files, repositories::user_repository::seed_admin_user},
-    presentation::router::build_router,
+    domain::repositories::user_repository::seed_admin_user, presentation::router::build_router,
 };
 use dotenv::dotenv;
 use tracing::info;
@@ -15,7 +14,6 @@ async fn main() {
         .init();
 
     seed_admin_user().await;
-    load_logs_from_files().await;
 
     let app = build_router();
 

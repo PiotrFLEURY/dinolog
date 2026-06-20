@@ -1,8 +1,8 @@
 use sea_orm::{
     ActiveModelTrait,
     ActiveValue::{NotSet, Set},
-    ColumnTrait, ConnectOptions, Database, DatabaseConnection, EntityTrait, PaginatorTrait,
-    QueryFilter, QueryOrder,
+    ColumnTrait, ConnectOptions, ConnectionTrait, Database, DatabaseConnection, EntityTrait,
+    PaginatorTrait, QueryFilter, QueryOrder,
     entity::prelude::DateTimeUtc,
 };
 use tracing::info;
@@ -23,6 +23,46 @@ async fn establish_connection() -> DatabaseConnection {
     Database::connect(opt)
         .await
         .expect("Failed to connect to the database")
+}
+
+pub async fn initialize_database() {
+    let db = establish_connection().await;
+
+    // Run Plain SQL scripts to create tables if they don't exist
+    let create_user_table_sql = r#"
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(255) NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL
+        );
+    "#;
+    db.execute(sea_orm::Statement::from_string(
+        db.get_database_backend(),
+        create_user_table_sql.to_string(),
+    ))
+    .await
+    .expect("Failed to create users table");
+
+    let create_log_entry_table_sql = r#"
+            CREATE TABLE IF NOT EXISTS log_entries (
+                id SERIAL PRIMARY KEY,
+                remote_addr VARCHAR(45) NOT NULL,
+                remote_user TEXT,
+                time_local TIMESTAMP WITH TIME ZONE NOT NULL,
+                http_method TEXT NOT NULL,
+                request_path TEXT NOT NULL,
+                http_version TEXT NOT NULL,
+                status_code TEXT NOT NULL,
+                http_referer TEXT,
+                http_user_agent TEXT
+            );
+    "#;
+    db.execute(sea_orm::Statement::from_string(
+        db.get_database_backend(),
+        create_log_entry_table_sql.to_string(),
+    ))
+    .await
+    .expect("Failed to create log entries table");
 }
 
 pub async fn clear_log_entries() {
@@ -120,7 +160,10 @@ pub async fn upsert_admin_user(username: &str, password_hash: &str) {
         Some(model) => {
             let mut active: user::ActiveModel = model.into();
             active.password_hash = Set(password_hash.to_string());
-            active.update(&db).await.expect("Failed to update admin user");
+            active
+                .update(&db)
+                .await
+                .expect("Failed to update admin user");
             info!("Admin user '{}' updated", username);
         }
         None => {
