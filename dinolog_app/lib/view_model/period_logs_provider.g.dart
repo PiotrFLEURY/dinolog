@@ -45,4 +45,4 @@ final class PeriodLogsProvider
   }
 }
 
-String _$periodLogsHash() => r'3266cdce3199eae8f1e224c532f263683ef65b70';
+String _$periodLogsHash() => r'92004d85ec3fc1ec974f028294851ce09eff3cd3';

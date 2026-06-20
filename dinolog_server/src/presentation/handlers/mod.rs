@@ -32,4 +32,5 @@ pub async fn handle_post_count_logs(
     )))
 }
 
+pub mod auth;
 pub mod dto;

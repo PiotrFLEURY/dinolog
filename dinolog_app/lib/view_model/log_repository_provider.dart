@@ -5,7 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'log_repository_provider.g.dart';
 
 @riverpod
-LogRepository logRepository(Ref ref) {
-  final api = ref.watch(dinologApiProvider);
+Future<LogRepository> logRepository(Ref ref) async {
+  final api = await ref.watch(dinologApiProvider.future);
   return LogRepository(api);
 }

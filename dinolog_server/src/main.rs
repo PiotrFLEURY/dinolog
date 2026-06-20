@@ -1,13 +1,20 @@
-use dinolog_server::{domain::loader::load_logs_from_files, presentation::router::build_router};
+use dinolog_server::{
+    domain::{loader::load_logs_from_files, repositories::user_repository::seed_admin_user},
+    presentation::router::build_router,
+};
+use dotenv::dotenv;
 use tracing::info;
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
+
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::INFO)
         .with_test_writer()
         .init();
 
+    seed_admin_user().await;
     load_logs_from_files().await;
 
     let app = build_router();
