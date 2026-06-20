@@ -1,4 +1,5 @@
 use sea_orm::{
+    ActiveModelTrait,
     ActiveValue::{NotSet, Set},
     ColumnTrait, ConnectOptions, Database, DatabaseConnection, EntityTrait, PaginatorTrait,
     QueryFilter, QueryOrder,
@@ -6,7 +7,10 @@ use sea_orm::{
 };
 use tracing::info;
 
-use crate::{data::dao::log_entry, domain::models::LogEntry};
+use crate::{
+    data::dao::{log_entry, user},
+    domain::models::LogEntry,
+};
 
 async fn establish_connection() -> DatabaseConnection {
     info!("Establishing database connection...");
@@ -92,6 +96,46 @@ pub async fn count_all_logs_entries() -> Result<u64, sea_orm::DbErr> {
     let count = log_entry::Entity::find().count(&db).await?;
 
     Ok(count)
+}
+
+pub async fn find_user_by_username(username: &str) -> Option<user::Model> {
+    let db = establish_connection().await;
+    user::Entity::find()
+        .filter(user::Column::Username.eq(username))
+        .one(&db)
+        .await
+        .expect("Failed to query user")
+}
+
+pub async fn upsert_admin_user(username: &str, password_hash: &str) {
+    let db = establish_connection().await;
+
+    let existing = user::Entity::find()
+        .filter(user::Column::Username.eq(username))
+        .one(&db)
+        .await
+        .expect("Failed to query user");
+
+    match existing {
+        Some(model) => {
+            let mut active: user::ActiveModel = model.into();
+            active.password_hash = Set(password_hash.to_string());
+            active.update(&db).await.expect("Failed to update admin user");
+            info!("Admin user '{}' updated", username);
+        }
+        None => {
+            let new_user = user::ActiveModel {
+                id: NotSet,
+                username: Set(username.to_string()),
+                password_hash: Set(password_hash.to_string()),
+            };
+            user::Entity::insert(new_user)
+                .exec(&db)
+                .await
+                .expect("Failed to insert admin user");
+            info!("Admin user '{}' created", username);
+        }
+    }
 }
 
 pub async fn count_logs_between_timestamps(

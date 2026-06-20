@@ -13,8 +13,13 @@ part of 'log_repository_provider.dart';
 final logRepositoryProvider = LogRepositoryProvider._();
 
 final class LogRepositoryProvider
-    extends $FunctionalProvider<LogRepository, LogRepository, LogRepository>
-    with $Provider<LogRepository> {
+    extends
+        $FunctionalProvider<
+          AsyncValue<LogRepository>,
+          LogRepository,
+          FutureOr<LogRepository>
+        >
+    with $FutureModifier<LogRepository>, $FutureProvider<LogRepository> {
   LogRepositoryProvider._()
     : super(
         from: null,
@@ -31,21 +36,14 @@ final class LogRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<LogRepository> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
+  $FutureProviderElement<LogRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
 
   @override
-  LogRepository create(Ref ref) {
+  FutureOr<LogRepository> create(Ref ref) {
     return logRepository(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(LogRepository value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<LogRepository>(value),
-    );
   }
 }
 
-String _$logRepositoryHash() => r'3c4f30efe2ef2cda9b5257222aef98f653955b40';
+String _$logRepositoryHash() => r'ffd909483f2961ce543c7e7609470ffbebd875b0';

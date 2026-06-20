@@ -13,8 +13,13 @@ part of 'api_provider.dart';
 final dinologApiProvider = DinologApiProvider._();
 
 final class DinologApiProvider
-    extends $FunctionalProvider<DinologApi, DinologApi, DinologApi>
-    with $Provider<DinologApi> {
+    extends
+        $FunctionalProvider<
+          AsyncValue<DinologApi>,
+          DinologApi,
+          FutureOr<DinologApi>
+        >
+    with $FutureModifier<DinologApi>, $FutureProvider<DinologApi> {
   DinologApiProvider._()
     : super(
         from: null,
@@ -31,21 +36,13 @@ final class DinologApiProvider
 
   @$internal
   @override
-  $ProviderElement<DinologApi> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
+  $FutureProviderElement<DinologApi> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
 
   @override
-  DinologApi create(Ref ref) {
+  FutureOr<DinologApi> create(Ref ref) {
     return dinologApi(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(DinologApi value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<DinologApi>(value),
-    );
   }
 }
 
-String _$dinologApiHash() => r'2a1feb8da881f3819a2ba4b517c6be57e8f940bd';
+String _$dinologApiHash() => r'582fd1c7d7a0bba28ff204ab6920316a07b71f9b';

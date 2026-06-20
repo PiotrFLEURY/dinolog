@@ -1,3 +1,9 @@
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS log_entries (
     id SERIAL PRIMARY KEY,
     remote_addr VARCHAR(45) NOT NULL,

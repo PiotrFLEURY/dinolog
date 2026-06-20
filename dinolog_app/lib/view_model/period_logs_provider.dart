@@ -8,7 +8,7 @@ part 'period_logs_provider.g.dart';
 @riverpod
 Future<LogEntries> periodLogs(Ref ref) async {
   final selectedPeriod = ref.watch(selectedPeriodProvider);
-  final repository = ref.watch(logRepositoryProvider);
+  final repository = await ref.watch(logRepositoryProvider.future);
   final from = maxPeriodStartTime(selectedPeriod);
   final to = DateTime.now();
   return repository.getLogEntries(from, to);
