@@ -1,0 +1,47 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "initialize-database",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "run",
+                "--bin",
+                "init-db"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "clear-logs",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "run",
+                "--bin",
+                "clear-logs"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "load-logs",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "run",
+                "--bin",
+                "load-logs"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        }
+    ]
+}

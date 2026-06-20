@@ -1,0 +1,47 @@
+name: Dinolog CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-push-server:
+    runs-on: ubuntu-latest
+    steps:
+      
+      - uses: actions/checkout@v7
+
+      - name: Build Server
+        working-directory: ./dinolog_server
+        run: |
+          docker login --username PiotrFLEURY --password ${{ secrets.GITHUB_TOKEN }} ghcr.io
+          docker build -t ghcr.io/piotrfleury/dinolog:dinolog-server-latest .
+          docker push ghcr.io/piotrfleury/dinolog:dinolog-server-latest
+
+  build-and-push-app:
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v7
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+
+      - name: Install dependencies
+        working-directory: ./dinolog_app
+        run: flutter pub get
+
+      - name: Build Web
+        working-directory: ./dinolog_app
+        run: flutter build web --release --dart-define=DINOLOG_API_BASE_URL=${{ secrets.DINOLOG_API_BASE_URL }}
+
+      - name: Build App
+        working-directory: ./dinolog_app
+        run: |
+          docker login --username PiotrFLEURY --password ${{ secrets.GITHUB_TOKEN }} ghcr.io
+          docker build -t ghcr.io/piotrfleury/dinolog:dinolog-app-latest .
+          docker push ghcr.io/piotrfleury/dinolog:dinolog-app-latest
+            

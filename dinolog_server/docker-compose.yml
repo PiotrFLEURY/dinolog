@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:18-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db/postgres
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin
+      JWT_SECRET: supersecretkey
+      BIND_ADDRESS: 0.0.0.0:3000
+      LOG_FILES_DIR: logs/
+    volumes:
+      - ./logs:/app/logs:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
