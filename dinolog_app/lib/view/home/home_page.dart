@@ -24,11 +24,8 @@ class HomePage extends ConsumerWidget {
           children: [
             const Text(
               'DinoLog fouille les logs pour vous',
-              style: TextStyle(color: DinologTheme.textPrimary),
+              style: TextStyle(color: DinologTheme.textPrimary, fontSize: 12),
             ),
-            Spacer(),
-            PeriodSelector(),
-            Spacer(),
           ],
         ),
         actions: [
@@ -43,20 +40,20 @@ class HomePage extends ConsumerWidget {
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
+            PeriodSelector(),
+            SizedBox(height: 16),
             IndicatorsCardList(),
             SizedBox(height: 16),
             const RequestsTimeline(),
             SizedBox(height: 16),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                spacing: 16,
-                children: [
-                  const StatusDistribution(),
-                  const HttpMethodList(),
-                  const IpList(),
-                ],
-              ),
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: [
+                const StatusDistribution(),
+                const HttpMethodList(),
+                const IpList(),
+              ],
             ),
             SizedBox(height: 16),
             EndpointList(),
