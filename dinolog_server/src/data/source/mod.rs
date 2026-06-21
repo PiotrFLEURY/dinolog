@@ -68,10 +68,14 @@ pub async fn initialize_database() {
 pub async fn clear_log_entries() {
     let db = establish_connection().await;
 
+    info!("Clearing all log entries from the database...");
+
     log_entry::Entity::delete_many()
         .exec(&db)
         .await
         .expect("Failed to clear log entries from the database");
+
+    info!("All log entries have been cleared from the database.");
 }
 
 pub async fn insert_log_entries(entries: &[LogEntry]) {

@@ -2,7 +2,7 @@ use tracing::info;
 
 use crate::{
     data::source::{count_all_logs_entries, insert_log_entries},
-    domain::parsers::combined::parse_combined_logs,
+    domain::{models::LogEntry, parsers::combined::parse_combined_logs},
 };
 
 pub async fn load_logs_from_files() {
@@ -30,22 +30,24 @@ pub async fn load_logs_from_files() {
         log_file_path
     );
 
-    entries.chunks(1_000).for_each(|chunk| {
+    insert_log_entries_chunks(&entries).await;
+
+    info!("Finished loading log entries from file: {}", log_file_path);
+}
+
+async fn insert_log_entries_chunks(entries: &[LogEntry]) {
+    for chunk in entries.chunks(1_000) {
         info!(
             "Inserting chunk of {} log entries into the database...",
             chunk.len()
         );
         let entries_chunk = chunk.to_vec();
-        tokio::spawn(async move {
-            insert_log_entries(&entries_chunk).await;
-        });
-    });
+        insert_log_entries(&entries_chunk).await;
+    }
 
     let total_inserted = count_all_logs_entries().await;
     match total_inserted {
         Ok(count) => info!("Total log entries in the database: {}", count),
         Err(e) => info!("Failed to count log entries in the database: {}", e),
     }
-
-    info!("Finished loading log entries from file: {}", log_file_path);
 }
