@@ -20,18 +20,19 @@ class Timeline {
 Future<Timeline> timeline(Ref ref) async {
   final selectedPeriod = ref.watch(selectedPeriodProvider);
   final logEntries = await ref.watch(periodLogsProvider.future);
+
   final timeline = Timeline();
-  for (var entry in logEntries.entries) {
+  for (var entry in logEntries.entries.reversed) {
     final time = entry.timeLocal;
-    final minute = getTimeUnitForSelectedPeriod(selectedPeriod, time);
-    final count = timeline.spots[minute] ?? TimelineCount(0, 0);
+    final timeUnit = getTimeUnitForSelectedPeriod(selectedPeriod, time);
+    final count = timeline.spots[timeUnit] ?? TimelineCount(0, 0);
     if (entry.statusCodeAsInt >= 200 && entry.statusCodeAsInt < 300) {
-      timeline.spots[minute] = TimelineCount(
+      timeline.spots[timeUnit] = TimelineCount(
         count.successCount + 1,
         count.errorCount,
       );
     } else if (entry.statusCodeAsInt >= 400) {
-      timeline.spots[minute] = TimelineCount(
+      timeline.spots[timeUnit] = TimelineCount(
         count.successCount,
         count.errorCount + 1,
       );
@@ -59,6 +60,7 @@ DateTime getTimeUnitForSelectedPeriod(
         entryTime.month,
         entryTime.day,
         entryTime.hour,
+        entryTime.minute - (entryTime.minute % 10),
       );
     case SelectedPeriodEnum.twentyFourHours:
       return DateTime(
@@ -72,14 +74,14 @@ DateTime getTimeUnitForSelectedPeriod(
         entryTime.year,
         entryTime.month,
         entryTime.day,
-        entryTime.hour,
+        entryTime.hour - (entryTime.hour % 3),
       );
     case SelectedPeriodEnum.sevenDays:
       return DateTime(
         entryTime.year,
         entryTime.month,
         entryTime.day,
-        entryTime.hour,
+        entryTime.hour - (entryTime.hour % 6),
       );
   }
 }

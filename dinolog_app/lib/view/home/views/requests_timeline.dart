@@ -129,7 +129,47 @@ class RequestsTimeline extends ConsumerWidget {
                             sideTitles: SideTitles(showTitles: false),
                           ),
                           bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 22,
+                              interval: 1,
+                              getTitlesWidget: (value, meta) {
+                                final index = value.toInt();
+                                if (index < 0 ||
+                                    index >= timeline.spots.length) {
+                                  return const SizedBox.shrink();
+                                }
+                                final timestamp = timeline.spots.keys.elementAt(
+                                  index,
+                                );
+                                if (timestamp.hour == 0 &&
+                                    timestamp.minute == 0) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: Text(
+                                      '${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}-${timestamp.day.toString().padLeft(2, '0')}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall
+                                          ?.copyWith(
+                                            color: DinologTheme.textPrimary,
+                                          ),
+                                    ),
+                                  );
+                                }
+                                final formattedTime =
+                                    '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Text(
+                                    formattedTime,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.labelSmall,
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ),
