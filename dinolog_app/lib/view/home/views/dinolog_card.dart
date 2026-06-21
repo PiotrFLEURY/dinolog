@@ -18,7 +18,7 @@ class DinologCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 200,
+      width: MediaQuery.of(context).size.width > 600 ? 200 : double.infinity,
       decoration: BoxDecoration(
         color: DinologTheme.cardPanelBackground,
         border: Border(top: BorderSide(color: borderColor, width: 2)),

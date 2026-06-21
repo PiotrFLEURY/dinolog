@@ -21,7 +21,9 @@ class _LogsFilterState extends State<LogsFilter> {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
       children: [
         ...['ALL', '2xx', '3xx', '4xx', '5xx'].map((status) {
           return Padding(
