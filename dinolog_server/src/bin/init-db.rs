@@ -1,5 +1,6 @@
 use dinolog_server::data::source::initialize_database;
 use dotenv::dotenv;
+use tracing::{error, info};
 
 #[tokio::main]
 async fn main() {
@@ -10,5 +11,12 @@ async fn main() {
         .with_test_writer()
         .init();
 
-    initialize_database().await;
+    match initialize_database().await {
+        Ok(_) => {
+            info!("Database initialized successfully.");
+        }
+        Err(e) => {
+            error!("Failed to initialize the database: {:?}", e);
+        }
+    };
 }

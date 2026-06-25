@@ -1,5 +1,6 @@
 use dinolog_server::domain::loader::load_logs_from_files;
 use dotenv::dotenv;
+use tracing::{error, info};
 
 #[tokio::main]
 async fn main() {
@@ -10,5 +11,12 @@ async fn main() {
         .with_test_writer()
         .init();
 
-    load_logs_from_files().await;
+    match load_logs_from_files().await {
+        Ok(_) => {
+            info!("Log entries loaded successfully.");
+        }
+        Err(e) => {
+            error!("Failed to load log entries: {:?}", e);
+        }
+    };
 }

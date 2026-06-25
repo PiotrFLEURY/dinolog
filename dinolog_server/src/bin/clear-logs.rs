@@ -1,5 +1,6 @@
 use dinolog_server::data::source::clear_log_entries;
 use dotenv::dotenv;
+use tracing::{error, info};
 
 #[tokio::main]
 async fn main() {
@@ -10,5 +11,12 @@ async fn main() {
         .with_test_writer()
         .init();
 
-    clear_log_entries().await;
+    match clear_log_entries().await {
+        Ok(_) => {
+            info!("Old log entries cleared successfully.");
+        }
+        Err(e) => {
+            error!("Failed to clear old log entries: {:?}", e);
+        }
+    };
 }

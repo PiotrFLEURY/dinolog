@@ -5,14 +5,14 @@ use sea_orm::{
     PaginatorTrait, QueryFilter, QueryOrder,
     entity::prelude::DateTimeUtc,
 };
-use tracing::info;
+use tracing::{error, info};
 
 use crate::{
     data::dao::{log_entry, user},
     domain::models::LogEntry,
 };
 
-async fn establish_connection() -> DatabaseConnection {
+pub async fn establish_connection() -> Result<DatabaseConnection, &'static str> {
     info!("Establishing database connection...");
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgres://postgres:postgres@localhost/postgres".to_string());
@@ -22,11 +22,11 @@ async fn establish_connection() -> DatabaseConnection {
 
     Database::connect(opt)
         .await
-        .expect("Failed to connect to the database")
+        .map_err(|_| "Failed to connect to the database")
 }
 
-pub async fn initialize_database() {
-    let db = establish_connection().await;
+pub async fn initialize_database() -> Result<(), &'static str> {
+    let db = establish_connection().await?;
 
     // Run Plain SQL scripts to create tables if they don't exist
     let create_user_table_sql = r#"
@@ -41,7 +41,7 @@ pub async fn initialize_database() {
         create_user_table_sql.to_string(),
     ))
     .await
-    .expect("Failed to create users table");
+    .map_err(|_| "Failed to create users table")?;
 
     let create_log_entry_table_sql = r#"
             CREATE TABLE IF NOT EXISTS log_entries (
@@ -62,24 +62,49 @@ pub async fn initialize_database() {
         create_log_entry_table_sql.to_string(),
     ))
     .await
-    .expect("Failed to create log entries table");
+    .map_err(|_| "Failed to create log entries table")?;
+
+    info!("Database initialized successfully.");
+    Ok(())
 }
 
-pub async fn clear_log_entries() {
-    let db = establish_connection().await;
+pub async fn clear_log_entries() -> Result<(), &'static str> {
+    let db = establish_connection().await?;
 
     info!("Clearing all log entries from the database...");
 
     log_entry::Entity::delete_many()
         .exec(&db)
         .await
-        .expect("Failed to clear log entries from the database");
+        .map_err(|_| "Failed to clear log entries from the database")?;
 
     info!("All log entries have been cleared from the database.");
+    Ok(())
 }
 
-pub async fn insert_log_entries(entries: &[LogEntry]) {
-    let db = establish_connection().await;
+pub async fn clear_log_entries_older_than(timestamp: DateTimeUtc) -> Result<(), &'static str> {
+    let db = establish_connection().await?;
+
+    info!(
+        "Clearing log entries older than {} from the database...",
+        timestamp
+    );
+
+    log_entry::Entity::delete_many()
+        .filter(log_entry::Column::TimeLocal.lt(timestamp))
+        .exec(&db)
+        .await
+        .map_err(|_| "Failed to clear old log entries from the database")?;
+
+    info!(
+        "All log entries older than {} have been cleared from the database.",
+        timestamp
+    );
+    Ok(())
+}
+
+pub async fn insert_log_entries(entries: &[LogEntry]) -> Result<(), &'static str> {
+    let db = establish_connection().await?;
 
     let mut many = vec![];
 
@@ -105,20 +130,24 @@ pub async fn insert_log_entries(entries: &[LogEntry]) {
     log_entry::Entity::insert_many(many)
         .exec(&db)
         .await
-        .expect("Failed to insert log entries into the database");
+        .map_err(|_| "Failed to insert log entries into the database")?;
+    Ok(())
 }
 
-pub async fn fetch_all_log_entries(from: DateTimeUtc, to: DateTimeUtc) -> Vec<LogEntry> {
-    let db = establish_connection().await;
+pub async fn fetch_all_log_entries(
+    from: DateTimeUtc,
+    to: DateTimeUtc,
+) -> Result<Vec<LogEntry>, &'static str> {
+    let db = establish_connection().await?;
 
     let log_entries: Vec<log_entry::Model> = log_entry::Entity::find()
         .filter(log_entry::Column::TimeLocal.between(from.clone(), to.clone()))
         .order_by_desc(log_entry::Column::TimeLocal)
         .all(&db)
         .await
-        .expect("Failed to fetch log entries from the database");
+        .map_err(|_| "Failed to fetch log entries from the database")?;
 
-    log_entries
+    let log_entries = log_entries
         .into_iter()
         .map(|entry| LogEntry {
             remote_addr: entry.remote_addr,
@@ -131,28 +160,48 @@ pub async fn fetch_all_log_entries(from: DateTimeUtc, to: DateTimeUtc) -> Vec<Lo
             http_referer: entry.http_referer,
             http_user_agent: entry.http_user_agent,
         })
-        .collect()
+        .collect();
+
+    Ok(log_entries)
 }
 
-pub async fn count_all_logs_entries() -> Result<u64, sea_orm::DbErr> {
-    let db = establish_connection().await;
+pub async fn count_all_logs_entries() -> Result<u64, &'static str> {
+    let db = establish_connection().await?;
 
-    let count = log_entry::Entity::find().count(&db).await?;
+    let count = log_entry::Entity::find()
+        .count(&db)
+        .await
+        .map_err(|_| "Failed to count log entries in the database")?;
 
     Ok(count)
 }
 
 pub async fn find_user_by_username(username: &str) -> Option<user::Model> {
-    let db = establish_connection().await;
-    user::Entity::find()
+    let db = match establish_connection().await {
+        Ok(conn) => conn,
+        Err(e) => {
+            error!("Failed to establish database connection: {}", e);
+            return None;
+        }
+    };
+
+    let result = user::Entity::find()
         .filter(user::Column::Username.eq(username))
         .one(&db)
         .await
-        .expect("Failed to query user")
+        .map_err(|_| {
+            error!("Failed to query user");
+            return None::<user::Model>;
+        });
+
+    match result {
+        Ok(user) => user,
+        Err(_) => None,
+    }
 }
 
-pub async fn upsert_admin_user(username: &str, password_hash: &str) {
-    let db = establish_connection().await;
+pub async fn upsert_admin_user(username: &str, password_hash: &str) -> Result<(), &'static str> {
+    let db = establish_connection().await?;
 
     let existing = user::Entity::find()
         .filter(user::Column::Username.eq(username))
@@ -167,7 +216,7 @@ pub async fn upsert_admin_user(username: &str, password_hash: &str) {
             active
                 .update(&db)
                 .await
-                .expect("Failed to update admin user");
+                .map_err(|_| "Failed to update admin user")?;
             info!("Admin user '{}' updated", username);
         }
         None => {
@@ -179,22 +228,25 @@ pub async fn upsert_admin_user(username: &str, password_hash: &str) {
             user::Entity::insert(new_user)
                 .exec(&db)
                 .await
-                .expect("Failed to insert admin user");
+                .map_err(|_| "Failed to insert admin user")?;
             info!("Admin user '{}' created", username);
         }
     }
+
+    Ok(())
 }
 
 pub async fn count_logs_between_timestamps(
     from: DateTimeUtc,
     to: DateTimeUtc,
-) -> Result<u64, sea_orm::DbErr> {
-    let db = establish_connection().await;
+) -> Result<u64, &'static str> {
+    let db = establish_connection().await?;
 
     let count = log_entry::Entity::find()
         .filter(log_entry::Column::TimeLocal.between(from.clone(), to.clone()))
         .count(&db)
-        .await?;
+        .await
+        .map_err(|_| "Failed to count log entries between timestamps")?;
 
     Ok(count)
 }
