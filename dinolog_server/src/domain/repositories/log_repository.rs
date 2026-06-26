@@ -6,9 +6,8 @@ use crate::{
 };
 
 pub async fn get_logs(from: DateTime<Utc>, to: DateTime<Utc>) -> Result<LogEntries, &'static str> {
-    Ok(LogEntries::from_vec(
-        fetch_all_log_entries(from.into(), to.into()).await,
-    ))
+    let entries = fetch_all_log_entries(from.into(), to.into()).await?;
+    Ok(LogEntries::from_vec(entries))
 }
 
 pub async fn get_log_count_between_timestamps(
@@ -17,7 +16,7 @@ pub async fn get_log_count_between_timestamps(
 ) -> Result<u64, &'static str> {
     let log_count = count_logs_between_timestamps(from.into(), to.into())
         .await
-        .map_err(|_| "Failed to count log entries")?;
+        .map_err(|_| "Failed to count log entries between timestamps")?;
 
     Ok(log_count)
 }

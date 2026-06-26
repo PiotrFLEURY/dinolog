@@ -31,8 +31,7 @@ fn verify_password(password: &str, hash: &str) -> bool {
 }
 
 fn generate_jwt(username: &str) -> Result<String, &'static str> {
-    let secret =
-        std::env::var("JWT_SECRET").expect("JWT_SECRET environment variable must be set");
+    let secret = std::env::var("JWT_SECRET").expect("JWT_SECRET environment variable must be set");
 
     let exp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -65,12 +64,13 @@ pub async fn authenticate(username: &str, password: &str) -> Result<String, &'st
     generate_jwt(username)
 }
 
-pub async fn seed_admin_user() {
+pub async fn seed_admin_user() -> Result<(), &'static str> {
     let username = std::env::var("ADMIN_USERNAME").unwrap_or_else(|_| "admin".to_string());
     let password =
         std::env::var("ADMIN_PASSWORD").expect("ADMIN_PASSWORD environment variable must be set");
 
     let hash = hash_password(&password);
-    upsert_admin_user(&username, &hash).await;
+    upsert_admin_user(&username, &hash).await?;
     info!("Admin user '{}' ready", username);
+    Ok(())
 }

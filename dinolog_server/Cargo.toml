@@ -22,3 +22,7 @@ jsonwebtoken = "9"
 argon2 = { version = "0.5", features = ["password-hash"] }
 tower-http = { version = "0.6", features = ["cors"] }
 dotenv = "0.15.0"
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+testcontainers = "0.27.3"

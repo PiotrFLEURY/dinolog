@@ -2,7 +2,7 @@ use dinolog_server::{
     domain::repositories::user_repository::seed_admin_user, presentation::router::build_router,
 };
 use dotenv::dotenv;
-use tracing::info;
+use tracing::{error, info};
 
 #[tokio::main]
 async fn main() {
@@ -13,7 +13,14 @@ async fn main() {
         .with_test_writer()
         .init();
 
-    seed_admin_user().await;
+    match seed_admin_user().await {
+        Ok(_) => {
+            info!("Admin user seeded successfully.");
+        }
+        Err(e) => {
+            error!("Failed to seed admin user: {:?}", e);
+        }
+    };
 
     let app = build_router();
 
